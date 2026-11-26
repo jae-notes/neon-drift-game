@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>NEON DRIFT — Cyberpunk Endless Runner</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="game-canvas" aria-label="NEON DRIFT 3D Game Canvas"></canvas>
+
+  <!-- Minimal Futuristic HUD -->
+  <div id="hud" class="hud hidden">
+    <div class="hud-left">
+      <div class="hud-card score-card">
+        <span class="hud-label">SCORE</span>
+        <span id="hud-score" class="hud-value">0</span>
+      </div>
+      <div class="hud-row">
+        <div class="hud-pill multiplier-pill">
+          <span class="hud-label">MULT</span>
+          <span id="hud-multiplier" class="hud-value accent-magenta">x1</span>
+        </div>
+        <div class="hud-pill">
+          <span class="hud-label">DIST</span>
+          <span id="hud-distance" class="hud-value accent-cyan">0 m</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hud-center">
+      <div id="powerup-shield" class="powerup-badge shield-badge hidden">
+        <span class="powerup-icon">◈</span>
+        <div class="powerup-info">
+          <span class="powerup-name">SHIELD ACTIVE</span>
+          <span class="powerup-sub">ABSORBS 1 IMPACT</span>
+        </div>
+      </div>
+      <div id="powerup-magnet" class="powerup-badge magnet-badge hidden">
+        <span class="powerup-icon">◎</span>
+        <div class="powerup-info">
+          <span class="powerup-name">ORB MAGNET</span>
+          <div class="powerup-bar-track">
+            <div id="magnet-bar-fill" class="powerup-bar-fill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hud-right">
+      <div class="hud-card best-card">
+        <span class="hud-label">BEST</span>
+        <span id="hud-best" class="hud-value accent-gold">0</span>
+      </div>
+      <div class="hud-controls">
+        <div class="speed-readout">
+          <span id="hud-speed">120</span>
+          <span class="speed-unit">KM/H</span>
+          <span class="speed-unit">·</span>
+          <span id="hud-fps">60</span>
+          <span class="speed-unit">FPS</span>
+        </div>
+        <button id="btn-mute" class="icon-btn" title="Toggle Audio (M)" aria-label="Toggle Audio">
+          <span id="mute-icon">♪</span>
+        </button>
+        <button id="btn-pause" class="icon-btn" title="Pause (P / Esc)" aria-label="Pause Game">
+          <span>❚❚</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Power-up / Event Toast -->
+  <div id="toast" class="toast hidden" aria-live="polite"></div>
+
+  <!-- Start Overlay -->
+  <div id="start-overlay" class="overlay">
+    <div class="overlay-panel">
+      <div class="eyebrow">SKYWAY SECTOR 09 // SYNTHWAVE RUNNER</div>
+      <h1 class="game-title" data-text="NEON DRIFT">NEON DRIFT</h1>
+      <p class="tagline">
+        Thread the elevated cyber-skyway. Dodge laser gates, leap plasma barriers,
+        and harvest energy orbs at terminal velocity.
+      </p>
+
+      <div id="start-best-wrap" class="best-banner hidden">
+        <span class="best-banner-label">HIGH SCORE</span>
+        <span id="start-best-value" class="best-banner-value">0</span>
+      </div>
+
+      <button id="btn-start" class="primary-btn">
+        <span>LAUNCH RUN</span>
+        <span class="btn-hint">SPACE / ENTER</span>
+      </button>
+
+      <div class="controls-grid">
+        <div class="control-item">
+          <kbd>A</kbd><kbd>D</kbd> <span class="sep">/</span> <kbd>←</kbd><kbd>→</kbd>
+          <span class="control-desc">Switch Lanes</span>
+        </div>
+        <div class="control-item">
+          <kbd>W</kbd><kbd>↑</kbd><kbd>Space</kbd>
+          <span class="control-desc">Jump</span>
+        </div>
+        <div class="control-item">
+          <kbd>S</kbd><kbd>↓</kbd>
+          <span class="control-desc">Slide / Quick-Drop</span>
+        </div>
+        <div class="control-item">
+          <kbd>P</kbd><kbd>M</kbd>
+          <span class="control-desc">Pause / Mute</span>
+        </div>
+      </div>
+
+      <div class="legend-row">
+        <span class="legend-chip cyan">◈ SHIELD: Absorbs 1 crash</span>
+        <span class="legend-chip magenta">◎ MAGNET: Pulls nearby orbs</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pause Overlay -->
+  <div id="pause-overlay" class="overlay hidden">
+    <div class="overlay-panel compact">
+      <div class="eyebrow">LINK SUSPENDED</div>
+      <h2 class="overlay-heading">PAUSED</h2>
+      <div class="overlay-actions">
+        <button id="btn-resume" class="primary-btn">RESUME</button>
+        <button id="btn-pause-restart" class="secondary-btn">RESTART</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Overlay -->
+  <div id="gameover-overlay" class="overlay hidden">
+    <div class="overlay-panel">
+      <div class="eyebrow danger">HULL INTEGRITY BREACHED</div>
+      <h2 class="overlay-heading">RUN TERMINATED</h2>
+
+      <div id="new-record-badge" class="record-badge hidden">★ NEW HIGH SCORE ★</div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="stat-label">FINAL SCORE</span>
+          <span id="go-score" class="stat-value">0</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">HIGH SCORE</span>
+          <span id="go-best" class="stat-value accent-gold">0</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">DISTANCE</span>
+          <span id="go-distance" class="stat-value accent-cyan">0 m</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">ORBS / MAX MULT</span>
+          <span id="go-orbs" class="stat-value accent-magenta">0 · x1</span>
+        </div>
+      </div>
+
+      <button id="btn-restart" class="primary-btn">
+        <span>RUN AGAIN</span>
+        <span class="btn-hint">SPACE / ENTER</span>
+      </button>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
